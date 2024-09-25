@@ -26,7 +26,7 @@ export function handleTransfer(event: Transfer): void {
     );
     fromHolder.address = event.params.from.toHex();
 
-    fromHolder.tokenBalances = [];
+    // fromHolder.tokenBalances = [];
     fromHolder.save();
   }
 
@@ -38,7 +38,7 @@ export function handleTransfer(event: Transfer): void {
       event.address.toHexString().concat("-").concat(event.params.to.toHex())
     );
     toHolder.address = event.params.to.toHex();
-    toHolder.tokenBalances = [];
+    // toHolder.tokenBalances = [];
     toHolder.save();
   }
   // 更新余额
@@ -75,15 +75,20 @@ function updateTokenBalance(
     value = balanceOf;
 
     balance = new TokenBalance(balanceId);
+
+    //  合约余额 ——》  用户余额
     balance.holder = holder.id;
     balance.token = token.id;
     // 查询erc20接口
     balance.balance = balanceOf;
     balance.save();
 
-    let holderTokenBalances = holder.tokenBalances;
-    holderTokenBalances.push(balance.id);
-    holder.tokenBalances = holderTokenBalances;
+    // let holderTokenBalances = holder.tokenBalances;
+    // holderTokenBalances.push(balance.id);
+    // holder.tokenBalances = holderTokenBalances;
+
+    // 用户余额 ——》 合约余额
+    holder.tokenBalance = balance.id;
     holder.save();
 
     // 将持有者添加到代币的持有者列表
@@ -131,7 +136,6 @@ function updateDailyHolderCount(
     );
 
     dailyTokenHolderCount = new DailyTokenHolderCount(dailyBalanceId);
-    dailyTokenHolderCount.token = token.id;
     dailyTokenHolderCount.date = formattedDate;
 
     // 前一天的总人数
@@ -142,6 +146,8 @@ function updateDailyHolderCount(
       dailyTokenHolderCount.holderCount = 0;
     }
     dailyTokenHolderCount.holderAddresses = ""; // 初始化持币人地址
+
+    dailyTokenHolderCount.token = token.id;
   } else {
     // 使用分隔符（例如逗号）处理 holderAddresses
     let holderAddressesArray =
