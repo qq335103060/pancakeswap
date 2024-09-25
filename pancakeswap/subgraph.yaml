@@ -1,0 +1,75 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Factory
+    network: bsc
+    source:
+      address: "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+      abi: Factory
+      startBlock: 42499594
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/mappings/factory.ts
+      entities:
+        - Token
+      abis:
+        - name: Factory
+          file: ./abis/Factory.json
+        - name: TokenABI
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: PairCreated(indexed address,indexed address,address,uint256)
+          handler: handlePairCreated
+          # calls:
+          #   - ERC20DecimalsToken0: ERC20[event.params.token0].decimals()
+          #   - ERC20DecimalsToken0: ERC20[event.params.token0].decimals()
+          #   - ERC20DecimalsToken0: ERC20[event.params.token0].decimals()
+
+## 使用文档 https://thegraph.com/docs/zh/developing/creating-a-subgraph/#%E6%95%B0%E6%8D%AE%E6%BA%90%E6%A8%A1%E6%9D%BF
+templates:
+  - kind: ethereum
+    name: Pair
+    network: bsc
+    source:
+      abi: Pair
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/mappings/pool.ts
+      entities:
+        - Swap ##  实体
+      abis:
+        - name: Pair
+          file: ./abis/Pair.json
+      eventHandlers:
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleSwap
+
+  - kind: ethereum
+    name: ERC20
+    network: bsc
+    source:
+      abi: ERC20
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/mappings/erc20Transfer.ts
+      entities:
+        - TransferRecord ##  实体
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+          calls:
+            - ERC20BalanceOfTo: ERC20[event.address].balanceOf(event.params.to)
+            - ERC20BalanceOfFrom: ERC20[event.address].balanceOf(event.params.from)

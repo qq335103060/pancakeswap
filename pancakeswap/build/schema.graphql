@@ -1,0 +1,128 @@
+type Token @entity @regularPolling {
+  " 令牌的智能合约地址 "
+  id: ID!
+
+  " 令牌名称 "
+  name: String!
+
+  " 令牌的符号  "
+  symbol: String!
+
+  " 此令牌使用的小数位数，默认为18 "
+  decimals: Int!
+
+  # 持有者列表
+  # holders: [TokenHolder!]! @relation(name: "TokenHolders")
+}
+
+type TokenHolder @entity {
+  id: ID! # 唯一标识符，为地址的字符串形式
+  address: String! # 钱包地址或合约地址
+  # type: String! # 地址类型  contractAddr 和 eoa
+  tokenBalances: [TokenBalance!]! @relation(name: "TokenHolderBalances") # 代币余额列表
+}
+
+# 合约余额
+type TokenBalance @entity {
+  id: ID! # 唯一标识符，可以是“tokenHolderId-tokenId”的组合
+  holder: TokenHolder! @relation(name: "TokenHolderBalances") # 关联到 TokenHolder
+  token: Token! # 关联到 Token
+  balance: BigInt! # 代币余额
+}
+
+# 合约持币人数统计
+type DailyTokenHolderCount @entity {
+  id: ID! # 格式为 "tokenId-date"
+  token: Token! @relation(name: "TokenDailyHolderCounts")
+  date: String! # 日期格式 "YYYY-MM-DD"
+  holderCount: Int! # 持币人数
+  holderAddresses: String! # 使用字符串保存 JSON 字符串化的 Map
+}
+
+type LiquidityPool @entity @regularPolling {
+  " 池子智能合约地址 "
+  id: ID!
+
+  " 流动性池名称 DAI/USDC/USDT "
+  name: String
+
+  " 流动性池符号 "
+  symbol: String
+
+  " 输入令牌 "
+  inputTokens: [Token!]!
+
+  " 输出令牌 "
+  outputToken: Token
+
+  " 创建时间戳 "
+  createdTimestamp: BigInt!
+
+  " 创建块编号 "
+  createdBlockNumber: BigInt!
+
+  " 锁定总价值 "
+  totalValueLockedUSD: BigDecimal!
+
+  " 流动性池产生的所有收入。 "
+  cumulativeTotalRevenueUSD: BigDecimal!
+
+  " 所有历史交易量均在此池中发生，以美元为"
+  cumulativeVolumeUSD: BigDecimal!
+
+  " 池中的输入令牌数量. "
+  inputTokenBalances: [BigInt!]!
+
+  " 输出令牌的总供应量 "
+  outputTokenSupply: BigInt
+
+  " 以美元为单位的输出令牌的每股价格"
+  outputTokenPriceUSD: BigDecimal
+
+  " 使用交易记录 "
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+}
+
+type Swap @entity(immutable: true) @transaction {
+  " swap-{交易哈希}-{日志索引} "
+  id: ID!
+
+  " 发出此事件的交易的交易哈希 "
+  hash: String!
+
+  " 事件日志索引。对于不发出事件的事务，创建从0开始的任意索引 "
+  logIndex: Int!
+
+  " 收到令牌的地址 "
+  to: String!
+
+  " 发送令牌的地址 "
+  from: String!
+
+  " 此事件的块编号 "
+  blockNumber: BigInt!
+
+  " 此事件的时间戳 "
+  timestamp: BigInt!
+
+  "buy or sell"
+  type: String!
+
+  "代币价格-ETH"
+  tokenPrice: BigDecimal!
+
+  " 输入令牌信息 "
+  tokenIn: Token!
+
+  " 以本机单位存入池中的代币数量  ETH"
+  amountIn: BigInt!
+
+  " 输出令牌信息 "
+  tokenOut: Token!
+
+  " 以本机单位从池中提取的令牌数量 ETH"
+  amountOut: BigInt!
+
+  " 涉及此交易的池 "
+  pool: LiquidityPool!
+}

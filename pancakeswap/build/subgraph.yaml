@@ -1,0 +1,68 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Factory
+    network: bsc
+    source:
+      address: "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+      abi: Factory
+      startBlock: 42499594
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: Factory/Factory.wasm
+      entities:
+        - Token
+      abis:
+        - name: Factory
+          file: Factory/Factory.json
+        - name: TokenABI
+          file: Factory/ERC20.json
+      eventHandlers:
+        - event: PairCreated(indexed address,indexed address,address,uint256)
+          handler: handlePairCreated
+templates:
+  - kind: ethereum
+    name: Pair
+    network: bsc
+    source:
+      abi: Pair
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: templates/Pair/Pair.wasm
+      entities:
+        - Swap
+      abis:
+        - name: Pair
+          file: Pair/Pair.json
+      eventHandlers:
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleSwap
+  - kind: ethereum
+    name: ERC20
+    network: bsc
+    source:
+      abi: ERC20
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: templates/ERC20/ERC20.wasm
+      entities:
+        - TransferRecord
+      abis:
+        - name: ERC20
+          file: ERC20/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+          calls:
+            - ERC20BalanceOfTo: ERC20[event.address].balanceOf(event.params.to)
+            - ERC20BalanceOfFrom: ERC20[event.address].balanceOf(event.params.from)
