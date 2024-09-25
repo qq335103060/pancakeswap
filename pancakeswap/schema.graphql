@@ -11,21 +11,27 @@ type Token @entity @regularPolling {
   " 此令牌使用的小数位数，默认为18 "
   decimals: Int!
 
-  # 持有者列表
-  # holders: [TokenHolder!]! @relation(name: "TokenHolders")
+  # 这里添加与 DailyTokenHolderCount 的关系
+  dailyHolderCounts: [DailyTokenHolderCount!]! @derivedFrom(field: "token")
+
+  tokenBalance: [TokenBalance!]! @derivedFrom(field: "token")
 }
 
 type TokenHolder @entity {
   id: ID! # 唯一标识符，为地址的字符串形式
   address: String! # 钱包地址或合约地址
   # type: String! # 地址类型  contractAddr 和 eoa
-  tokenBalances: [TokenBalance!]! @relation(name: "TokenHolderBalances") # 代币余额列表
+  # tokenBalances: [TokenBalance!]! @relation(name: "TokenHolderBalances") # 代币余额列表
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "holder") # 代币余额列表
+  tokenBalance: TokenBalance!
 }
 
 # 合约余额
 type TokenBalance @entity {
   id: ID! # 唯一标识符，可以是“tokenHolderId-tokenId”的组合
-  holder: TokenHolder! @relation(name: "TokenHolderBalances") # 关联到 TokenHolder
+  # holder: TokenHolder! @relation(name: "TokenHolderBalances") # 关联到 TokenHolder
+  holders: TokenHolder! @derivedFrom(field: "tokenBalance") # 关联到 TokenHolder
+  holder: TokenHolder!
   token: Token! # 关联到 Token
   balance: BigInt! # 代币余额
 }
@@ -33,7 +39,8 @@ type TokenBalance @entity {
 # 合约持币人数统计
 type DailyTokenHolderCount @entity {
   id: ID! # 格式为 "tokenId-date"
-  token: Token! @relation(name: "TokenDailyHolderCounts")
+  # token: Token! @relation(name: "TokenDailyHolderCounts")
+  token: Token!
   date: String! # 日期格式 "YYYY-MM-DD"
   holderCount: Int! # 持币人数
   holderAddresses: String! # 使用字符串保存 JSON 字符串化的 Map
